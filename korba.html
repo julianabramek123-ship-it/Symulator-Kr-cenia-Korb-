@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Symulator Silnika na Korbę - Klasyk</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #101214;
+            color: #d1d5db;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            margin: 0 0 5px 0;
+            font-size: 22px;
+            color: #f39c12;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(243, 156, 18, 0.4);
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 12px;
+            color: #8e9eab;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            background: #181a20;
+            padding: 25px;
+            border-radius: 20px;
+            border: 3px solid #2a2e39;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 15px rgba(255,255,255,0.05);
+            max-width: 850px;
+            width: 100%;
+        }
+
+        .view-panel {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            width: 100%;
+        }
+
+        /* Blok Silnika */
+        .engine-housing {
+            position: relative;
+            width: 320px;
+            height: 380px;
+            background: radial-gradient(circle at 50% 30%, #3a3f47 0%, #16181d 100%);
+            border-radius: 25px;
+            border: 4px solid #282c34;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 10px 25px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* Cylinder i Tłok */
+        .cylinder {
+            position: absolute;
+            top: 30px;
+            width: 120px;
+            height: 160px;
+            background: #0d0e11;
+            border: 4px solid #4a5160;
+            border-top: 8px solid #6b7280;
+            border-radius: 8px 8px 0 0;
+            overflow: hidden;
+        }
+
+        .spark-plug {
+            position: absolute;
+            top: 15px;
+            width: 16px;
+            height: 16px;
+            background: #e74c3c;
+            border-radius: 50%;
+            box-shadow: 0 0 5px #e74c3c;
+            transition: background 0.05s, box-shadow 0.05s;
+        }
+
+        .spark-plug.active {
+            background: #fff;
+            box-shadow: 0 0 25px #f1c40f, 0 0 50px #ff9f43;
+        }
+
+        .piston {
+            position: absolute;
+            width: 104px;
+            height: 60px;
+            left: 4px;
+            background: linear-gradient(180deg, #d1d5db 0%, #6b7280 100%);
+            border-radius: 6px;
+            border: 2px solid #374151;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.6);
+        }
+
+        .con-rod {
+            position: absolute;
+            width: 14px;
+            height: 100px;
+            background: linear-gradient(90deg, #9ca3af, #4b5563, #9ca3af);
+            transform-origin: top center;
+            border-radius: 7px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        }
+
+        /* Koło Zamachowe i Korba */
+        .crankcase {
+            position: absolute;
+            bottom: 20px;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #2c3038 0%, #111215 100%);
+            border: 4px solid #3b4252;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .flywheel {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: repeating-conic-gradient(#2d3748 0deg 15deg, #1a202c 15deg 30deg);
+            border: 3px solid #4a5568;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+        }
+
+        .crank-assembly {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .crank-arm {
+            position: absolute;
+            width: 24px;
+            height: 110px;
+            background: linear-gradient(180deg, #e2e8f0 0%, #64748b 100%);
+            border-radius: 12px;
+            bottom: 50%;
+            transform-origin: center bottom;
+            cursor: grab;
+            touch-action: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+
+        .crank-arm:active {
+            cursor: grabbing;
+        }
+
+        .crank-arm.detached {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(50px) rotate(45deg) scale(0.7) !important;
+        }
+
+        .handle {
+            position: absolute;
+            top: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 32px;
+            height: 32px;
+            background: radial-gradient(circle, #d97706 0%, #78350f 100%);
+            border-radius: 50%;
+            border: 2px solid #451a03;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.4);
+        }
+
+        .exhaust-pipe {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            width: 30px;
+            height: 50px;
+            border-right: 8px solid #4b5563;
+            border-top: 8px solid #4b5563;
+            border-radius: 0 15px 0 0;
+        }
+
+        .smoke-particle {
+            position: absolute;
+            background: rgba(220, 220, 220, 0.7);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: smokeRise 0.8s ease-out forwards;
+        }
+
+        @keyframes smokeRise {
+            0% { transform: translate(0, 0) scale(0.5); opacity: 0.9; }
+            100% { transform: translate(35px, -70px) scale(3.5); opacity: 0; }
+        }
+
+        /* Zegary */
+        .dashboard {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .gauge-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        .gauge {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, #1f2937 60%, #111827 100%);
+            border-radius: 50%;
+            border: 4px solid #374151;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8), 0 5px 10px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .gauge-main {
+            width: 150px;
+            height: 150px;
+            border-color: #4b5563;
+        }
+
+        .gauge-title {
+            position: absolute;
+            top: 25px;
+            font-size: 10px;
+            color: #9ca3af;
+            font-weight: bold;
+        }
+
+        .gauge-value {
+            position: absolute;
+            bottom: 25px;
+            font-size: 12px;
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .gauge-needle {
+            position: absolute;
+            bottom: 50%;
+            width: 3px;
+            height: 45px;
+            background: #ef4444;
+            transform-origin: bottom center;
+            transform: rotate(-120deg);
+            transition: transform 0.05s linear;
+            border-radius: 2px;
+        }
+
+        .gauge-main .gauge-needle {
+            height: 58px;
+            width: 4px;
+        }
+
+        .gauge-center {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: #9ca3af;
+            border-radius: 50%;
+            border: 2px solid #1f2937;
+        }
+
+        /* Sterowanie */
+        .controls {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: #111827;
+            padding: 15px 20px;
+            border-radius: 12px;
+            border: 1px solid #1f2937;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .btn-attach { background: #2563eb; color: white; }
+        .btn-attach:hover { background: #1d4ed8; }
+        .btn-attach:disabled { background: #374151; color: #6b7280; cursor: not-allowed; }
+
+        .btn-kill { background: #dc2626; color: white; }
+        .btn-kill:hover { background: #b91c1c; }
+        .btn-kill:disabled { background: #374151; color: #6b7280; cursor: not-allowed; }
+
+        .status-box {
+            width: 100%;
+            padding: 12px;
+            background: #000;
+            border-radius: 6px;
+            border: 1px solid #1f2937;
+            text-align: center;
+            font-size: 12px;
+            color: #f59e0b;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Mechaniczny Silnik Stacjonarny</h1>
+    <div class="subtitle">Rozpędź koło zamachowe! Złap korbę i kręć mocno!</div>
+
+    <div class="main-container">
+        <div class="view-panel">
+            
+            <div class="engine-housing" id="engineHousing">
+                <div class="exhaust-pipe" id="exhaustPipe"></div>
+                <div class="spark-plug" id="sparkPlug"></div>
+
+                <div class="cylinder">
+                    <div class="piston" id="piston"></div>
+                    <div class="con-rod" id="conRod"></div>
+                </div>
+
+                <div class="crankcase">
+                    <div class="flywheel" id="flywheel">
+                        <div class="crank-assembly" id="crankAssembly">
+                            <div class="crank-arm" id="crankArm">
+                                <div class="handle"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard">
+                <div class="gauge gauge-main">
+                    <div class="gauge-title">OBROTY (RPM)</div>
+                    <div class="gauge-needle" id="rpmNeedle"></div>
+                    <div class="gauge-center"></div>
+                    <div class="gauge-value" id="rpmValue">0</div>
+                </div>
+
+                <div class="gauge-group">
+                    <div class="gauge">
+                        <div class="gauge-title">TEMP.</div>
+                        <div class="gauge-needle" id="tempNeedle"></div>
+                        <div class="gauge-center"></div>
+                        <div class="gauge-value" id="tempValue">20°C</div>
+                    </div>
+
+                    <div class="gauge">
+                        <div class="gauge-title">OLEJ</div>
+                        <div class="gauge-needle" id="oilNeedle"></div>
+                        <div class="gauge-center"></div>
+                        <div class="gauge-value" id="oilValue">0 BAR</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="controls">
+            <div class="btn-group">
+                <button class="btn btn-attach" id="attachBtn" disabled>Nałóż korbę</button>
+                <button class="btn btn-kill" id="killBtn" disabled>Zgaś silnik (Odcięcie)</button>
+            </div>
+
+            <div class="status-box" id="statusBox">
+                STAN: MUSISZ DŁUGO I CORAZ SZYBCIEJ KRĘCIĆ KORBĄ!
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playCrankSound(currentRpm) {
+            if (!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                const filter = audioCtx.createBiquadFilter();
+
+                const baseFreq = 80 + (currentRpm / 500) * 180;
+                const volume = Math.min(0.9, 0.3 + (currentRpm / 500) * 0.6);
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.06);
+
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(baseFreq * 2.5, audioCtx.currentTime);
+
+                gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.06);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.06);
+            } catch (e) {}
+        }
+
+        function playPopSound(freq, volume) {
+            if (!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                const filter = audioCtx.createBiquadFilter();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(12, audioCtx.currentTime + 0.12);
+
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(freq * 3.5, audioCtx.currentTime);
+
+                gain.gain.setValueAtTime(volume * 1.8, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.12);
+            } catch (e) {}
+        }
+
+        function playMetalClick() {
+            if (!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(450, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.05);
+
+                gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.05);
+            } catch (e) {}
+        }
+
+        const crankArm = document.getElementById('crankArm');
+        const crankAssembly = document.getElementById('crankAssembly');
+        const flywheel = document.getElementById('flywheel');
+        const piston = document.getElementById('piston');
+        const conRod = document.getElementById('conRod');
+        const sparkPlug = document.getElementById('sparkPlug');
+        const engineHousing = document.getElementById('engineHousing');
+        const exhaustPipe = document.getElementById('exhaustPipe');
+
+        const rpmNeedle = document.getElementById('rpmNeedle');
+        const rpmValue = document.getElementById('rpmValue');
+        const tempNeedle = document.getElementById('tempNeedle');
+        const tempValue = document.getElementById('tempValue');
+        const oilNeedle = document.getElementById('oilNeedle');
+        const oilValue = document.getElementById('oilValue');
+
+        const attachBtn = document.getElementById('attachBtn');
+        const killBtn = document.getElementById('killBtn');
+        const statusBox = document.getElementById('statusBox');
+
+        let isDragging = false;
+        let isCrankAttached = true;
+        let engineRunning = false;
+
+        let angle = 0;
+        let rpm = 0;
+        let targetHandSpeed = 0;
+        let lastMouseAngle = 0;
+        let lastCrankSoundAngle = 0;
+
+        let temperature = 20;
+        let oilPressure = 0;
+
+        const MIN_START_RPM = 520; 
+        const IDLE_RPM = 750;
+
+        function getAngleFromEvent(e) {
+            const rect = flywheel.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            const dx = clientX - centerX;
+            const dy = clientY - centerY;
+            let deg = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+            if (deg < 0) deg += 360;
+            return deg;
+        }
+
+        function startDrag(e) {
+            if (!isCrankAttached || engineRunning) return;
+            initAudio();
+            isDragging = true;
+            lastMouseAngle = getAngleFromEvent(e);
+            e.preventDefault();
+        }
+
+        function moveDrag(e) {
+            if (!isDragging || !isCrankAttached || engineRunning) return;
+            const currentMouseAngle = getAngleFromEvent(e);
+            let delta = currentMouseAngle - lastMouseAngle;
+
+            if (delta > 180) delta -= 360;
+            if (delta < -180) delta += 360;
+
+            if (delta > 0) {
+                targetHandSpeed = delta * 18;
+            } else {
+                targetHandSpeed = 0;
+            }
+
+            lastMouseAngle = currentMouseAngle;
+        }
+
+        function stopDrag() {
+            isDragging = false;
+            targetHandSpeed = 0;
+        }
+
+        crankArm.addEventListener('mousedown', startDrag);
+        window.addEventListener('mousemove', moveDrag);
+        window.addEventListener('mouseup', stopDrag);
+
+        crankArm.addEventListener('touchstart', startDrag, { passive: false });
+        window.addEventListener('touchmove', moveDrag, { passive: false });
+        window.addEventListener('touchend', stopDrag);
+
+        attachBtn.addEventListener('click', () => {
+            if (engineRunning) return;
+            isCrankAttached = true;
+            crankArm.classList.remove('detached');
+            attachBtn.disabled = true;
+            playMetalClick();
+            statusBox.innerText = "STAN: NAŁOŻONO KORBĘ. KRĘĆ BARDZO SZYBKO!";
+            statusBox.style.color = "#f59e0b";
+        });
+
+        killBtn.addEventListener('click', () => {
+            if (!engineRunning) return;
+            engineRunning = false;
+            killBtn.disabled = true;
+            statusBox.innerText = "STAN: ODCIĘCIE PALIWA - ZAGASZANIE...";
+            statusBox.style.color = "#ef4444";
+        });
+
+        function detachCrank() {
+            isCrankAttached = false;
+            crankArm.classList.add('detached');
+            attachBtn.disabled = false;
+            playMetalClick();
+        }
+
+        function spawnSmoke() {
+            const rect = exhaustPipe.getBoundingClientRect();
+            const housingRect = engineHousing.getBoundingClientRect();
+
+            const smoke = document.createElement('div');
+            smoke.className = 'smoke-particle';
+
+            const size = 12 + Math.random() * 18;
+            smoke.style.width = `${size}px`;
+            smoke.style.height = `${size}px`;
+            smoke.style.left = `${rect.right - housingRect.left - 10}px`;
+            smoke.style.top = `${rect.top - housingRect.top - 5}px`;
+
+            engineHousing.appendChild(smoke);
+            setTimeout(() => smoke.remove(), 800);
+        }
+
+        let lastTime = performance.now();
+
+        function update(now) {
+            const dt = Math.min((now - lastTime) / 1000, 0.05);
+            lastTime = now;
+
+            if (engineRunning) {
+                rpm += (IDLE_RPM - rpm) * (dt * 2.5);
+
+                const shake = (rpm / 800) * (Math.random() - 0.5) * 4;
+                engineHousing.style.transform = `translate(${shake}px, ${shake}px)`;
+
+                killBtn.disabled = false;
+            } else {
+                if (isDragging) {
+                    rpm += (targetHandSpeed - rpm) * (dt * 1.8);
+                } else {
+                    rpm *= 0.94;
+                    if (rpm < 5) rpm = 0;
+                }
+
+                engineHousing.style.transform = 'none';
+
+                if (isCrankAttached) {
+                    if (rpm < 200) {
+                        statusBox.innerText = "ZA WOLNO! ROZPĘDŹ KOŁO ZAMACHOWE!";
+                        statusBox.style.color = "#ef4444";
+                    } else if (rpm < MIN_START_RPM) {
+                        statusBox.innerText = `SZYBCIEJ! OBROTY: ${Math.round(rpm)} / ${MIN_START_RPM} RPM`;
+                        statusBox.style.color = "#f59e0b";
+                    } else {
+                        engineRunning = true;
+                        detachCrank();
+                        statusBox.innerText = "STAN: ZAPŁON! SILNIK PRACUJE NA WOLNYCH OBROTACH!";
+                        statusBox.style.color = "#10b981";
+                    }
+                }
+            }
+
+            const degreesPerSecond = (rpm / 60) * 360;
+            const prevAngle = angle;
+            angle = (angle + degreesPerSecond * dt) % 360;
+
+            if (!engineRunning && rpm > 20) {
+                if (Math.abs(angle - lastCrankSoundAngle) > 90) {
+                    playCrankSound(rpm);
+                    lastCrankSoundAngle = angle;
+                }
+            }
+
+            if (prevAngle > 300 && angle < 60) {
+                if (engineRunning || rpm > 150) {
+                    sparkPlug.classList.add('active');
+                    setTimeout(() => sparkPlug.classList.remove('active'), 40);
+
+                    const pitch = engineRunning ? 38 : 35 + (rpm / 90);
+                    const vol = engineRunning ? 0.75 : 0.25;
+                    playPopSound(pitch, vol);
+                    spawnSmoke();
+                }
+            }
+
+            const rad = (angle * Math.PI) / 180;
+            crankAssembly.style.transform = `rotate(${angle}deg)`;
+
+            const r = 35;
+            const l = 90;
+            const pistonY = r * Math.cos(rad) + Math.sqrt(l * l - Math.pow(r * Math.sin(rad), 2));
+
+            const pistonTop = 80 - (pistonY - 55);
+            piston.style.top = `${pistonTop}px`;
+
+            const conRodAngle = Math.asin((r * Math.sin(rad)) / l) * (180 / Math.PI);
+            conRod.style.top = `${pistonTop + 50}px`;
+            conRod.style.left = `53px`;
+            conRod.style.transform = `rotate(${-conRodAngle}deg)`;
+
+            const rpmGaugeAngle = -120 + (rpm / 4200) * 240;
+            rpmNeedle.style.transform = `rotate(${Math.min(rpmGaugeAngle, 130)}deg)`;
+            rpmValue.innerText = Math.round(rpm);
+
+            if (engineRunning) {
+                temperature = Math.min(95, temperature + dt * 1.2);
+            } else {
+                temperature = Math.max(20, temperature - dt * 2);
+            }
+            const tempGaugeAngle = -120 + ((temperature - 20) / 100) * 240;
+            tempNeedle.style.transform = `rotate(${tempGaugeAngle}deg)`;
+            tempValue.innerText = `${Math.round(temperature)}°C`;
+
+            oilPressure = engineRunning ? 2.5 : (rpm / 1000) * 1.0;
+            const oilGaugeAngle = -120 + (oilPressure / 5) * 240;
+            oilNeedle.style.transform = `rotate(${Math.min(oilGaugeAngle, 120)}deg)`;
+            oilValue.innerText = `${oilPressure.toFixed(1)} BAR`;
+
+            if (!engineRunning && rpm === 0 && !isCrankAttached) {
+                statusBox.innerText = "STAN: SILNIK ZGASŁ. NAŁÓŻ KORBĘ PONOWNIE.";
+                statusBox.style.color = "#ef4444";
+            }
+
+            requestAnimationFrame(update);
+        }
+
+        requestAnimationFrame(update);
+    </script>
+</body>
+</html>
